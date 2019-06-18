@@ -1,0 +1,143 @@
+ --@E:\amreet\UserCreate.txt
+ /* 
+NAME: Amrit Thapa
+ID: 18406540
+WEEK:14
+Activity : 1
+DATE: march 16
+*/
+
+--DROP COMMAND
+DROP TRIGGER trig_dob_ck;--DROP TRIGGERS
+DROP TRIGGER trig_dobcheck_ck;--DROP TRIGGERS
+
+--to display message on screen
+SET SERVEROUTPUT ON
+
+--CREATE A TRIGGER CHECK WHETHER A DATE OF BIRTH IS GREATER THAN TODAY DATE OR NOT WHILE INSERT AND UPDATE
+CREATE OR REPLACE TRIGGER trig_dob_ck
+BEFORE INSERT OR UPDATE OF date_of_birth ON students
+FOR EACH ROW 
+WHEN (NEW.date_of_birth > SYSDATE) --CONDITIONAL SPECIFICATION
+--BODY BEGIN
+BEGIN
+	RAISE_APPLICATION_ERROR(-20001, 'ERROR - THIS STUDENT WAS BORN AFTER TODAY, AMEND STUDENT DATE OF BIRTH!');
+END trig_dob_ck; --END OF TRIGGERS
+/
+
+--TESTING
+--1)SELECT STUDENTS RECORD
+SELECT student_id,date_of_birth FROM students;
+--2) BY INSERTING THE INVALID DATE
+INSERT INTO students 
+(student_id, student_firstname, student_surname, phone_number, fax_number, gender
+,date_of_birth, preferred_language, company_id)
+VALUES (6999, 'CHRIS', 'ADAMS', '(213)334-2789', 2133342789, 'M', '5-MAR-2019', 'EN', 30); --error occured
+
+--3)SELECT STUDENTS RECORD
+SELECT student_id,date_of_birth FROM students; --no record inserted
+
+--4)By UPDATING THE INVALID DATE
+UPDATE students SET date_of_birth ='25-MAR-2019'
+WHERE student_id = 6999; --ERROR OCCURED
+
+--5)SELECT STUDENTS RECORD
+SELECT student_id,date_of_birth FROM students; --no record inserted
+
+--6)bY INSERTING A VALID DATE
+INSERT INTO students 
+(student_id, student_firstname, student_surname, phone_number, fax_number, gender
+,date_of_birth, preferred_language, company_id)
+VALUES (6399, 'CHRIS', 'ADAMS', '(213)334-2789', 2133342789, 'M', '5-JAN-2019', 'EN', 30); --ROW CREATED
+
+--7)By UPDATING THE VALID DATE
+UPDATE students SET date_of_birth ='25-JAN-2019'
+WHERE student_id = 6999; -- ROW UPDATED
+
+--8)SELECT STUDENTS RECORD
+SELECT student_id,date_of_birth FROM students; --UPDATED RECORD DISPLAYED
+
+--CREATE A TRIGGER CHECK WHETHER A DATE OF BIRTH IS GREATER THAN TODAY DATE OR NOT WHILE INSERT AND UPDATE
+CREATE OR REPLACE TRIGGER trig_dobcheck_ck
+AFTER INSERT OR UPDATE OF date_of_birth ON students
+FOR EACH ROW 
+WHEN (NEW.date_of_birth IS NOT NULL) --CONDITIONAL SPECIFICATION
+--BODY BEGIN
+DECLARE
+vd_today DATE;
+BEGIN
+SELECT SYSDATE
+INTO vd_today
+FROM DUAL;
+	IF (vd_today-(365*18))<:NEW.date_of_birth THEN 
+	RAISE_APPLICATION_ERROR(-20002, 'the student is a child!');
+	ELSIF (vd_today-(365*18))>:NEW.date_of_birth THEN 
+	RAISE_APPLICATION_ERROR(-20002, 'the student is a ADULT!');
+	ELSE NULL;
+	END IF;
+	END trig_dobcheck_ck; --END OF TRIGGERS
+/
+
+--TESTING
+--1)SELECT STUDENTS RECORD
+SELECT student_id,date_of_birth FROM students;
+--2) BY INSERTING THE CHILD DATE
+INSERT INTO students 
+(student_id, student_firstname, student_surname, phone_number, fax_number, gender
+,date_of_birth, preferred_language, company_id)
+VALUES (6199, 'CHRIS', 'ADAMS', '(213)334-2789', 2133342789, 'M', '5-MAR-2018', 'EN', 30); --THE STUDENT IS CHILD
+
+--2) BY INSERTING THE ADULT DATE
+INSERT INTO students 
+(student_id, student_firstname, student_surname, phone_number, fax_number, gender
+,date_of_birth, preferred_language, company_id)
+VALUES (6189, 'CHRIS', 'ADAMS', '(213)334-2789', 2133342789, 'M', '5-MAR-2000', 'EN', 30); --THE STUDENT IS ADULT
+
+--3)SELECT STUDENTS RECORD
+SELECT student_id,date_of_birth FROM students; --no record inserted
+
+
+
+
+
+CREATE OR REPLACE FUNCTION func_staff_age(in_staff_dob DATE) RETURN NUMBER IS
+vn_staff_age NUMBER(3);
+
+
+
+BEGIN
+
+vn_staff_age := FLOOR(MONTHS_BETWEEN(sysdate, in_staff_dob)/12);
+
+RETURN vn_staff_age;
+
+END func_staff_age;
+/
+
+SHOW ERRORS;
+
+
+
+
+CREATE OR REPLACE PROCEDURE proc_age(in_staff_id NUMBER) IS
+
+vd_dob DATE;
+vn_age NUMBER(3);
+
+BEGIN
+
+SELECT date_of_birth
+INTO vd_dob
+FROM staff
+WHERE staff_id = in_staff_id;
+
+vn_age := func_staff_age(vd_dob);
+
+DBMS_OUTPUT.PUT_LINE('the age is ' || vn_age);
+
+
+
+
+
+
+
